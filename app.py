@@ -11,6 +11,32 @@ app = Flask(__name__)
 DOWNLOAD_DIRECTORY = 'downloads/'
 
 
+# def emptyFileUtility(name, start, content, totalSize, numberOfThreads):
+
+#     if(start >= totalSize):
+#         return
+
+#     with open(name, "r+b") as fp:
+#         try:
+#             fp.seek(start)
+#             fp.write(content)
+#             emptyFileUtility(name, start+numberOfThreads, content, totalSize, numberOfThreads)
+#         except:
+#             time.sleep(1)
+#             emptyFileUtility(name, start, content, totalSize, numberOfThreads)
+
+
+# def createEmptyFile(name, totalSize, numberOfThreads):
+    # for i in range(numberOfThreads):
+    #     start = i
+
+    #     t = threading.Thread(target=emptyFileUtility,
+    #                          kwargs={'name': name, 'start': start, 'content': '\0', 'totalSize': totalSize, 'numberOfThreads': numberOfThreads})
+    #     t.setDaemon(True)
+    #     t.start()
+
+
+
 def getNumberOfThreads(requestObj):
     try:
         numberOfThreads = requestObj['numberOfThreads']
@@ -41,9 +67,9 @@ def downloadFile(url, numberOfThreads):
         print(totalSize)
         partSize = int(totalSize) / numberOfThreads
         print(partSize)
-        fp = open(name, "w")
-        fp.write('\0' * totalSize)
-        fp.close()
+
+        # createEmptyFile(name, totalSize, numberOfThreads)
+        createEmptyFile(name, totalSize)
 
         for i in range(numberOfThreads):
             start = int(partSize * i)
