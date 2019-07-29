@@ -28,34 +28,36 @@ def downloadPart(start, end, url, name):
     with open(name, "r+b") as fp:
         fp.seek(start)
         fp.write(r.content)
+        print("start", start)
 
 
 def downloadFile(url, numberOfThreads):
     try:
         r = requests.head(url)
+        print(r.headers)
         name = DOWNLOAD_DIRECTORY + 'd_' + \
             str(int(time.time()))+'_'+url.split('/')[-1]
         totalSize = int(r.headers['content-length'])
         print(totalSize)
         partSize = int(totalSize) / numberOfThreads
         print(partSize)
-        fp = open(name, "wb")
-        fp.write(' ' * totalSize)
+        fp = open(name, "w")
+        fp.write('\0' * totalSize)
         fp.close()
 
         for i in range(numberOfThreads):
-            start = partSize * i
-            end = start + partSize
+            start = int(partSize * i)
+            end = int(start + partSize)
 
             t = threading.Thread(target=downloadPart,
                                  kwargs={'start': start, 'end': end, 'url': url, 'name': name})
             t.setDaemon(True)
             t.start()
 
-        return
+        return True, totalSize, partSize
     except Exception as e:
         print(str(e))
-        return
+        return False, None, None
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -77,7 +79,8 @@ def download():
         if 'url' in requestObj:
             url = requestObj['url']
             numberOfThreads = getNumberOfThreads(requestObj)
-            downloadFile(url, numberOfThreads)
+            success, totalSize, partSize = downloadFile(url, numberOfThreads)
+            print(success, totalSize, partSize)
             return jsonify(requestObj)
 
         else:
