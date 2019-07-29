@@ -1,0 +1,62 @@
+2019-07-29 19:15:09,810  * Running on http://0.0.0.0:8000/ (Press CTRL+C to quit)
+2019-07-29 19:15:17,210 Download request received
+2019-07-29 19:15:17,211 Request data : {u'url': u'https://speed.hetzner.de/100MB.bin', u'numberOfThreads': 10}
+2019-07-29 19:15:17,211 Number of threads : 10
+2019-07-29 19:15:17,211 Processing download url
+2019-07-29 19:15:17,214 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:17,922 https://speed.hetzner.de:443 "HEAD /100MB.bin HTTP/1.1" 200 0
+2019-07-29 19:15:17,924 Url : https://speed.hetzner.de/100MB.bin
+2019-07-29 19:15:17,925 Filename : downloads/d_1564407917_100MB.bin
+2019-07-29 19:15:17,925 Total size : 104857600
+2019-07-29 19:15:17,925 Chunk size : 10485760
+2019-07-29 19:15:17,925 Number of threads : 10
+2019-07-29 19:15:17,925 Created empty file of size 104857600 bytes
+2019-07-29 19:15:18,047 Download started for chunk 0 to 10485760
+2019-07-29 19:15:18,047 Stated thread 1
+2019-07-29 19:15:18,049 Download started for chunk 10485760 to 20971520
+2019-07-29 19:15:18,050 Stated thread 2
+2019-07-29 19:15:18,050 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,050 Download started for chunk 20971520 to 31457280
+2019-07-29 19:15:18,052 Stated thread 3
+2019-07-29 19:15:18,053 Download started for chunk 31457280 to 41943040
+2019-07-29 19:15:18,054 Stated thread 4
+2019-07-29 19:15:18,055 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,056 Download started for chunk 41943040 to 52428800
+2019-07-29 19:15:18,056 Stated thread 5
+2019-07-29 19:15:18,057 Download started for chunk 52428800 to 62914560
+2019-07-29 19:15:18,058 Stated thread 6
+2019-07-29 19:15:18,062 Download started for chunk 62914560 to 73400320
+2019-07-29 19:15:18,062 Stated thread 7
+2019-07-29 19:15:18,063 Download started for chunk 73400320 to 83886080
+2019-07-29 19:15:18,063 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,063 Stated thread 8
+2019-07-29 19:15:18,064 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,065 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,068 Download started for chunk 83886080 to 94371840
+2019-07-29 19:15:18,068 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,069 Stated thread 9
+2019-07-29 19:15:18,071 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,071 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,073 Download started for chunk 94371840 to 104857600
+2019-07-29 19:15:18,073 Stated thread 10
+2019-07-29 19:15:18,073 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,076 127.0.0.1 - - [29/Jul/2019 19:15:18] "POST /download HTTP/1.1" 200 -
+2019-07-29 19:15:18,077 Starting new HTTPS connection (1): speed.hetzner.de:443
+2019-07-29 19:15:18,909 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:18,913 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:18,919 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:18,936 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:18,949 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:18,958 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485760
+2019-07-29 19:15:18,968 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:18,974 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:19,530 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:20,418 https://speed.hetzner.de:443 "GET /100MB.bin HTTP/1.1" 206 10485761
+2019-07-29 19:15:29,490 Download completed for chunk 41943040 to 52428800
+2019-07-29 19:15:29,818 Download completed for chunk 73400320 to 83886080
+2019-07-29 19:15:31,540 Download completed for chunk 62914560 to 73400320
+2019-07-29 19:15:31,696 Download completed for chunk 0 to 10485760
+2019-07-29 19:15:31,886 Download completed for chunk 20971520 to 31457280
+2019-07-29 19:15:32,932 Download completed for chunk 94371840 to 104857600
+2019-07-29 19:15:33,093 Download completed for chunk 52428800 to 62914560
+2019-07-29 19:15:33,482 Download completed for chunk 83886080 to 94371840
