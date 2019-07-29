@@ -5,36 +5,29 @@ import json
 import requests
 import threading
 import time
+import os
 
 app = Flask(__name__)
 
 DOWNLOAD_DIRECTORY = 'downloads/'
 
-
-# def emptyFileUtility(name, start, content, totalSize, numberOfThreads):
-
-#     if(start >= totalSize):
-#         return
-
-#     with open(name, "r+b") as fp:
-#         try:
-#             fp.seek(start)
-#             fp.write(content)
-#             emptyFileUtility(name, start+numberOfThreads, content, totalSize, numberOfThreads)
-#         except:
-#             time.sleep(1)
-#             emptyFileUtility(name, start, content, totalSize, numberOfThreads)
+downloadedPartsTracker = []
 
 
-# def createEmptyFile(name, totalSize, numberOfThreads):
-    # for i in range(numberOfThreads):
-    #     start = i
-
-    #     t = threading.Thread(target=emptyFileUtility,
-    #                          kwargs={'name': name, 'start': start, 'content': '\0', 'totalSize': totalSize, 'numberOfThreads': numberOfThreads})
-    #     t.setDaemon(True)
-    #     t.start()
-
+def combineFiles(name, numberOfThreads):
+    combinedFile = open(name, "a+b")
+    i = 0
+    while i < numberOfThreads:
+        partName = name+'_part'+str(i)
+        filePart = open(partName, "r+b")
+        content = filePart.read()
+        if len(content) > 0:
+            print(content)
+            combinedFile.write(content)
+            i += 1
+            os.remove(partName)
+        else:
+            time.sleep(1)
 
 
 def getNumberOfThreads(requestObj):
@@ -45,16 +38,19 @@ def getNumberOfThreads(requestObj):
         return 4
 
 
-def downloadPart(start, end, url, name):
+def downloadPart(start, end, url, name, part, numberOfThreads):
 
     headers = {'Range': 'bytes=%d-%d' % (start, end)}
 
     r = requests.get(url, headers=headers, stream=True)
 
-    with open(name, "r+b") as fp:
-        fp.seek(start)
+    with open(name+'_part'+str(part), "w+b") as fp:
         fp.write(r.content)
         print("start", start)
+        downloadedPartsTracker.append(part)
+        print(downloadedPartsTracker)
+        if len(downloadedPartsTracker) == numberOfThreads:
+            combineFiles(name, numberOfThreads)
 
 
 def downloadFile(url, numberOfThreads):
@@ -69,14 +65,13 @@ def downloadFile(url, numberOfThreads):
         print(partSize)
 
         # createEmptyFile(name, totalSize, numberOfThreads)
-        createEmptyFile(name, totalSize)
 
         for i in range(numberOfThreads):
             start = int(partSize * i)
-            end = int(start + partSize)
+            end = int(start + partSize - 1)
 
             t = threading.Thread(target=downloadPart,
-                                 kwargs={'start': start, 'end': end, 'url': url, 'name': name})
+                                 kwargs={'start': start, 'end': end, 'url': url, 'name': name, 'part': i, 'numberOfThreads': numberOfThreads})
             t.setDaemon(True)
             t.start()
 
