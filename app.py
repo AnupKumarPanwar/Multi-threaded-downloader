@@ -24,13 +24,13 @@ logger.setLevel(logging.DEBUG)
 
 
 def updateDownloadStatus(name, status):
-    with open(TRACKER_DIRECTORY+name+".json", "w+") as fp:
+    with open(TRACKER_DIRECTORY + name + ".json", "w+") as fp:
         json.dump(status, fp)
 
 
 def createEmptyFile(name, totalSize):
     logger.info("Created empty file of size " + str(totalSize) + " bytes")
-    fp = open(DOWNLOAD_DIRECTORY+name, "w+")
+    fp = open(DOWNLOAD_DIRECTORY + name, "w+")
     fp.write('\0' * totalSize)
     fp.close()
 
@@ -47,6 +47,11 @@ def getNumberOfThreads(requestObj):
 
 
 # downloads a specific part of file
+
+def downloadWhole(url, name):
+    r = requests.get(url)
+    fp = open(DOWNLOAD_DIRECTORY + name, "w+b")
+    fp.write(r.content)
 
 
 def downloadPart(start, end, url, name, part, downloadStatus):
@@ -84,44 +89,51 @@ def downloadFile(url, numberOfThreads):
         print(r.headers)
         remoteFileName = 'd_' + \
             str(int(time.time()))+'_'+url.split('/')[-1]
-        totalSize = int(r.headers['content-length'])
-        print(totalSize)
-        partSize = int(totalSize) / numberOfThreads
-        print(partSize)
-
-        logger.debug("Url : " + url)
-        logger.debug("Filename : " + remoteFileName)
-        logger.debug("Total size : " + str(totalSize))
-        logger.debug("Chunk size : " + str(partSize))
-        logger.debug("Number of threads : " + str(numberOfThreads))
-
-        downloadStatus = {
-            'name': remoteFileName,
-            'numberOfThreads': numberOfThreads
-        }
-
-        for i in range(numberOfThreads):
-            downloadStatus['thread_'+str(i)] = 'pending'
-
-        updateDownloadStatus(remoteFileName, downloadStatus)
-
-        createEmptyFile(remoteFileName, totalSize)
-
-        for i in range(numberOfThreads):
-            start = int(partSize * i)
-            end = int(start + partSize)
-
-            if i == numberOfThreads-1:
-                end = totalSize
-
-            t = threading.Thread(target=downloadPart,
-                                 kwargs={'start': start, 'end': end, 'url': url, 'name': remoteFileName, 'part': i, 'downloadStatus': downloadStatus})
+        if not 'content-length' in r.headers:
+            t = threading.Thread(target=downloadWhole,
+                                 kwargs={'url': url, 'name': remoteFileName})
             t.setDaemon(True)
             t.start()
-            downloadStatus['thread_'+str(i)] = 'started'
-            logger.info("Stated thread " + str(i+1))
+            return True, None, None, remoteFileName
+        else:
+            totalSize = int(r.headers['content-length'])
+            print(totalSize)
+            partSize = int(totalSize) / numberOfThreads
+            print(partSize)
 
-        return True, totalSize, partSize, remoteFileName
+            logger.debug("Url : " + url)
+            logger.debug("Filename : " + remoteFileName)
+            logger.debug("Total size : " + str(totalSize))
+            logger.debug("Chunk size : " + str(partSize))
+            logger.debug("Number of threads : " + str(numberOfThreads))
+
+            downloadStatus = {
+                'name': remoteFileName,
+                'numberOfThreads': numberOfThreads
+            }
+
+            for i in range(numberOfThreads):
+                downloadStatus['thread_'+str(i)] = 'pending'
+
+            updateDownloadStatus(remoteFileName, downloadStatus)
+
+            createEmptyFile(remoteFileName, totalSize)
+
+            for i in range(numberOfThreads):
+                start = int(partSize * i)
+                end = int(start + partSize)
+
+                if i == numberOfThreads-1:
+                    end = totalSize
+
+                t = threading.Thread(target=downloadPart,
+                                     kwargs={'start': start, 'end': end, 'url': url, 'name': remoteFileName, 'part': i, 'downloadStatus': downloadStatus})
+                t.setDaemon(True)
+                t.start()
+                downloadStatus['thread_'+str(i)] = 'started'
+                logger.info("Stated thread " + str(i+1))
+
+            return True, totalSize, partSize, remoteFileName
     except Exception as e:
         logger.error("Exception - downloadFile method " + str(e))
         return False, None, None, None
