@@ -91,8 +91,16 @@ def downloadPart(start, end, url, name, part, downloadStatus):
         downloadLocation = DOWNLOAD_DIRECTORY + name
 
         with open(downloadLocation, "r+b") as fp:
+            downloaded = 0
             fp.seek(start)
-            fp.write(r.content)
+            for chunk in r.iter_content(chunk_size=5120):
+                if chunk:
+                    fp.write(chunk)
+                    downloaded += len(chunk)
+                    downloadStatus['thread_' +
+                                   str(part)] = str(downloaded*100/(end-start))+'%'
+                    updateDownloadStatus(name, downloadStatus)
+
         downloadStatus['thread_'+str(part)] = 'completed'
         updateDownloadStatus(name, downloadStatus)
         logger.info(name + " - Download completed for chunk " +
