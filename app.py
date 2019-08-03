@@ -24,11 +24,13 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
+# write the download status on local file so that download can be restarted in future
 def updateDownloadStatus(name, status):
     with open(TRACKER_DIRECTORY + name + ".json", "w+") as fp:
         json.dump(status, fp)
 
 
+# create empty file on which the content to be downloaded will be returned
 def createEmptyFile(name, totalSize):
     logger.info(name + " - Created empty file of size " +
                 str(totalSize) + " bytes")
@@ -37,6 +39,7 @@ def createEmptyFile(name, totalSize):
     fp.close()
 
 
+# returns the number of threads requested by the client, default is the number of cpu cores
 def getNumberOfThreads(requestObj):
     ''' 
     >>> getNumberOfThreads({"numberOfThreads": 20}) 
@@ -51,8 +54,7 @@ def getNumberOfThreads(requestObj):
         return multiprocessing.cpu_count()
 
 
-# downloads a specific part of file
-
+# downloads whole file in single thread
 def downloadWhole(url, name):
     numberOfThreads = 1
     downloadStatus = {
@@ -72,7 +74,8 @@ def downloadWhole(url, name):
         fp = open(DOWNLOAD_DIRECTORY + name, "w+b")
         fp.write(r.content)
         downloadStatus['thread_1'] = 'completed'
-        downloadStatus['downloadTime'] = int(time.time() - downloadStatus['startTime'])
+        downloadStatus['downloadTime'] = int(
+            time.time() - downloadStatus['startTime'])
         updateDownloadStatus(name, downloadStatus)
         logger.info(name + " - Download complete")
     except Exception as e:
@@ -82,6 +85,7 @@ def downloadWhole(url, name):
         logger.error(name + " - Thread 1 failed")
 
 
+# download a specific part of the file
 def downloadPart(start, end, url, name, part, downloadStatus):
     try:
         logger.info(name + " - Download started for chunk " +
@@ -104,7 +108,8 @@ def downloadPart(start, end, url, name, part, downloadStatus):
                     updateDownloadStatus(name, downloadStatus)
 
         downloadStatus['thread_'+str(part)] = 'completed'
-        downloadStatus['downloadTime'] = int(time.time() - downloadStatus['startTime'])
+        downloadStatus['downloadTime'] = int(
+            time.time() - downloadStatus['startTime'])
         updateDownloadStatus(name, downloadStatus)
         logger.info(name + " - Download completed for chunk " +
                     str(start) + " to "+str(end))
@@ -117,8 +122,6 @@ def downloadPart(start, end, url, name, part, downloadStatus):
 
 
 # downdloader function that calculates the sizes of chunks to be downloaded and starts threads for downloading them
-
-
 def downloadFile(url, numberOfThreads):
     ''' 
     >>> downloadFile("https://speed.hetzner.de/100MB.bin", 5)
@@ -247,6 +250,7 @@ def download():
         }
         return jsonify(response), 500
 
+
 # endpoint to check the status of download
 @app.route('/status/<fileName>', methods=['GET', 'POST'])
 def status(fileName):
@@ -270,7 +274,7 @@ def status(fileName):
         return jsonify(response)
 
 
-# endpoint to check the status of download
+# endpoint to fetch the logs of a specific date
 @app.route('/logs/<date>/', methods=['GET', 'POST'])
 def logs(date):
     try:
@@ -298,6 +302,7 @@ def logs(date):
         return jsonify(response)
 
 
+# endpoint to retry download for a specific part of file
 @app.route('/retry/<fileName>/<part>', methods=['GET', 'POST'])
 def retry(fileName, part):
     try:
