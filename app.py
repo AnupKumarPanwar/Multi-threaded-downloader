@@ -8,7 +8,7 @@ import time
 import logging
 import datetime
 import multiprocessing
-
+from doctest import testmod
 
 app = Flask(__name__)
 
@@ -37,14 +37,17 @@ def createEmptyFile(name, totalSize):
     fp.close()
 
 
-# returns the number of threads, requested by the client, default 4
-
-
 def getNumberOfThreads(requestObj):
-    try:
+    ''' 
+    >>> getNumberOfThreads({"numberOfThreads": 20}) 
+    20
+    >>> getNumberOfThreads({}) 
+    4
+    '''
+    if 'numberOfThreads' in requestObj:
         numberOfThreads = requestObj['numberOfThreads']
         return numberOfThreads
-    except:
+    else:
         return multiprocessing.cpu_count()
 
 
@@ -106,10 +109,13 @@ def downloadPart(start, end, url, name, part, downloadStatus):
 
 
 def downloadFile(url, numberOfThreads):
+    ''' 
+    >>> downloadFile("https://speed.hetzner.de/100MB.bin", 5)
+    (True, 104857600, 20971520, 'd_1564818033_100MB.bin')
+    '''
     try:
         logger.info("Processing download url")
         r = requests.head(url)
-        print(r.headers)
         remoteFileName = 'd_' + \
             str(int(time.time()))+'_'+url.split('/')[-1]
         if not 'content-length' in r.headers:
@@ -120,9 +126,7 @@ def downloadFile(url, numberOfThreads):
             return True, None, None, remoteFileName
         else:
             totalSize = int(r.headers['content-length'])
-            print(totalSize)
             partSize = int(totalSize) / numberOfThreads
-            print(partSize)
 
             logger.debug("Url : " + url)
             logger.debug("Filename : " + remoteFileName)
@@ -188,16 +192,26 @@ def download():
             numberOfThreads = getNumberOfThreads(requestObj)
             success, totalSize, partSize, name = downloadFile(
                 url, numberOfThreads)
-            print(success, totalSize, partSize)
-            response = {
-                'success': True,
-                'message': 'File download started',
-                'data': {
-                    'fileName': name
-                },
-                'error': None
-            }
-            return jsonify(response)
+            if success:
+                response = {
+                    'success': True,
+                    'message': 'File download started',
+                    'data': {
+                        'fileName': name
+                    },
+                    'error': None
+                }
+                return jsonify(response)
+            else:
+                response = {
+                    'success': False,
+                    'message': 'File download failed',
+                    'data': {
+                        'fileName': name
+                    },
+                    'error': None
+                }
+                return jsonify(response)
 
         else:
             logger.error("'url' parameter missing")
@@ -297,7 +311,6 @@ def retry(fileName, part):
             }
             return jsonify(response)
     except Exception as e:
-        print(str(e))
         response = {
             'success': False,
             'message': 'Failed to restart download',
