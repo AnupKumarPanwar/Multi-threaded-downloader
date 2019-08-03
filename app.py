@@ -15,8 +15,9 @@ app = Flask(__name__)
 PORT = "8000"
 DOWNLOAD_DIRECTORY = 'downloads/'
 TRACKER_DIRECTORY = 'trackers/'
+LOGS_DIRECTORY = 'logs/'
 date = datetime.date.today()
-logging.basicConfig(filename="logs/"+str(date)+".log",
+logging.basicConfig(filename=LOGS_DIRECTORY+str(date)+".log",
                     format='%(asctime)s %(message)s',
                     filemode='a+')
 logger = logging.getLogger()
@@ -29,7 +30,8 @@ def updateDownloadStatus(name, status):
 
 
 def createEmptyFile(name, totalSize):
-    logger.info("Created empty file of size " + str(totalSize) + " bytes")
+    logger.info(name + " - Created empty file of size " +
+                str(totalSize) + " bytes")
     fp = open(DOWNLOAD_DIRECTORY + name, "w+")
     fp.write('\0' * totalSize)
     fp.close()
@@ -49,14 +51,35 @@ def getNumberOfThreads(requestObj):
 # downloads a specific part of file
 
 def downloadWhole(url, name):
-    r = requests.get(url)
-    fp = open(DOWNLOAD_DIRECTORY + name, "w+b")
-    fp.write(r.content)
+    numberOfThreads = 1
+    downloadStatus = {
+        'url': url,
+        'name': name,
+        'numberOfThreads': numberOfThreads
+    }
+
+    for i in range(numberOfThreads):
+        downloadStatus['thread_'+str(i)] = 'pending'
+
+    updateDownloadStatus(name, downloadStatus)
+
+    try:
+        r = requests.get(url)
+        fp = open(DOWNLOAD_DIRECTORY + name, "w+b")
+        fp.write(r.content)
+        downloadStatus['thread_1'] = 'completed'
+        updateDownloadStatus(name, downloadStatus)
+        logger.info(name + " - Download complete")
+    except Exception as e:
+        downloadStatus['thread_1'] = 'failed'
+        updateDownloadStatus(name, downloadStatus)
+        logger.error(name + " - Exception - downloadWhole method - " + str(e))
+        logger.error(name + " - Thread 1 failed")
 
 
 def downloadPart(start, end, url, name, part, downloadStatus):
     try:
-        logger.info("Download started for chunk " +
+        logger.info(name + " - Download started for chunk " +
                     str(start) + " to "+str(end))
         headers = {'Range': 'bytes=%d-%d' % (start, end)}
 
@@ -69,14 +92,14 @@ def downloadPart(start, end, url, name, part, downloadStatus):
             fp.write(r.content)
         downloadStatus['thread_'+str(part)] = 'completed'
         updateDownloadStatus(name, downloadStatus)
-        logger.info("Download completed for chunk " +
+        logger.info(name + " - Download completed for chunk " +
                     str(start) + " to "+str(end))
 
     except Exception as e:
         downloadStatus['thread_'+str(part)] = 'failed'
         updateDownloadStatus(name, downloadStatus)
-        logger.error("Exception - downloadPart method - " + str(e))
-        logger.error("Thread " + str(part+1) + " failed")
+        logger.error(name + " - Exception - downloadPart method - " + str(e))
+        logger.error(name + " - Thread " + str(part) + " failed")
 
 
 # downdloader function that calculates the sizes of chunks to be downloaded and starts threads for downloading them
@@ -108,6 +131,8 @@ def downloadFile(url, numberOfThreads):
             logger.debug("Number of threads : " + str(numberOfThreads))
 
             downloadStatus = {
+                'url': url,
+                'contentLength': totalSize,
                 'name': remoteFileName,
                 'numberOfThreads': numberOfThreads
             }
@@ -130,8 +155,7 @@ def downloadFile(url, numberOfThreads):
                                      kwargs={'start': start, 'end': end, 'url': url, 'name': remoteFileName, 'part': i, 'downloadStatus': downloadStatus})
                 t.setDaemon(True)
                 t.start()
-                downloadStatus['thread_'+str(i)] = 'started'
-                logger.info("Stated thread " + str(i+1))
+                logger.info(remoteFileName + " - Stated thread " + str(i))
 
             return True, totalSize, partSize, remoteFileName
     except Exception as e:
@@ -162,7 +186,6 @@ def download():
         if 'url' in requestObj:
             url = requestObj['url']
             numberOfThreads = getNumberOfThreads(requestObj)
-            logger.info("Number of threads : " + str(numberOfThreads))
             success, totalSize, partSize, name = downloadFile(
                 url, numberOfThreads)
             print(success, totalSize, partSize)
@@ -218,6 +241,70 @@ def status(fileName):
             'data': None,
             'error': None
         }
+        return jsonify(response)
+
+
+# endpoint to check the status of download
+@app.route('/logs/<date>/', methods=['GET', 'POST'])
+def logs(date):
+    try:
+        with open(LOGS_DIRECTORY+date+".log", "rb") as fp:
+            logsArray = []
+            line = fp.readline()
+            while(line):
+                logsArray.append(line)
+                line = fp.readline()
+
+            response = {
+                'success': True,
+                'message': 'Logs fetched successfully',
+                'data': logsArray,
+                'error': None
+            }
+            return jsonify(response)
+    except:
+        response = {
+            'success': False,
+            'message': 'Failed to fetch logs',
+            'data': None,
+            'error': None
+        }
+        return jsonify(response)
+
+
+@app.route('/retry/<fileName>/<part>', methods=['GET', 'POST'])
+def retry(fileName, part):
+    try:
+        part = int(part)
+        with open(TRACKER_DIRECTORY+fileName+".json", "rb") as fp:
+            downloadStatus = json.load(fp)
+            url = downloadStatus['url']
+            contentLength = int(downloadStatus['contentLength'])
+            numberOfThreads = int(downloadStatus['numberOfThreads'])
+
+            partSize = int(contentLength) / numberOfThreads
+            start = partSize*part
+            end = min(start+partSize, contentLength)
+            t = threading.Thread(target=downloadPart,
+                                 kwargs={'start': start, 'end': end, 'url': url, 'name': fileName, 'part': part, 'downloadStatus': downloadStatus})
+            t.setDaemon(True)
+            t.start()
+            response = {
+                'success': True,
+                'message': 'Download restarted',
+                'data': None,
+                'error': None
+            }
+            return jsonify(response)
+    except Exception as e:
+        print(str(e))
+        response = {
+            'success': False,
+            'message': 'Failed to restart download',
+            'data': None,
+            'error': None
+        }
+        logger.error("Exception - retry endpoint " + str(e))
         return jsonify(response)
 
 
