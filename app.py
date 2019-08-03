@@ -58,7 +58,8 @@ def downloadWhole(url, name):
     downloadStatus = {
         'url': url,
         'name': name,
-        'numberOfThreads': numberOfThreads
+        'numberOfThreads': numberOfThreads,
+        'startTime': int(time.time())
     }
 
     for i in range(numberOfThreads):
@@ -71,6 +72,7 @@ def downloadWhole(url, name):
         fp = open(DOWNLOAD_DIRECTORY + name, "w+b")
         fp.write(r.content)
         downloadStatus['thread_1'] = 'completed'
+        downloadStatus['downloadTime'] = int(time.time() - downloadStatus['startTime'])
         updateDownloadStatus(name, downloadStatus)
         logger.info(name + " - Download complete")
     except Exception as e:
@@ -102,6 +104,7 @@ def downloadPart(start, end, url, name, part, downloadStatus):
                     updateDownloadStatus(name, downloadStatus)
 
         downloadStatus['thread_'+str(part)] = 'completed'
+        downloadStatus['downloadTime'] = int(time.time() - downloadStatus['startTime'])
         updateDownloadStatus(name, downloadStatus)
         logger.info(name + " - Download completed for chunk " +
                     str(start) + " to "+str(end))
@@ -146,7 +149,8 @@ def downloadFile(url, numberOfThreads):
                 'url': url,
                 'contentLength': totalSize,
                 'name': remoteFileName,
-                'numberOfThreads': numberOfThreads
+                'numberOfThreads': numberOfThreads,
+                'startTime': int(time.time())
             }
 
             for i in range(numberOfThreads):
